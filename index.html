@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <style>
+        .chartWithMarkerOverlay {
+            position: relative;
+            width: 700px;
+        }
+
+        .overlay-marker {
+            font-size: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            background-color: black;
+            color: white;
+            position: absolute;
+            padding: 3px;
+            opacity: 0.5;
+        }
+    </style>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript" src="data.js"></script>
+    <script type="text/javascript">
+        const events = [
+            {
+                "eventType": "entered",
+                "target": 1,
+                "price": 30860.77,
+                "at": "2021-06-22T15:22:00Z",
+                "takeProfitRatio": 0
+            },
+            {
+                "eventType": "invalidated",
+                "price": 34261.01,
+                "at": "2021-06-24T15:22:00Z",
+                "takeProfitRatio": 0.110180011711
+            }
+        ]
+        function compileDataset() {
+            if (rawDataset.length <= 100) {
+                return rawDataset
+            }
+            const dataset = []
+            const step = Math.floor(rawDataset.length / 100)
+            for (let i = 0; i < rawDataset.length; i += step) {
+                const r1 = rawDataset[i]
+                const r2 = rawDataset[Math.min(i + step, rawDataset.length - 1)]
+                const d = new Date(r1.t * 1000)
+
+                dataset.push([d, Math.min(r1.l, r2.l), r1.o, r2.c, Math.max(r1.h, r2.h)])
+            }
+            return dataset
+        }
+        const dataset = compileDataset()
+
+    </script>
+    <script type="text/javascript">
+        google.charts.load('current', { 'packages': ['corechart'] });
+        google.charts.setOnLoadCallback(drawChart);
+
+        function drawChart() {
+            var data = new google.visualization.DataTable();
+            data.addColumn('datetime')
+            data.addColumn('number')
+            data.addColumn('number')
+            data.addColumn('number')
+            data.addColumn('number')
+            dataset.forEach(datapoint => data.addRow(datapoint))
+
+            // var data = google.visualization.arrayToDataTable(dataset, true);
+
+            var options = {
+                legend: 'none',
+                candlestick: {
+                    fallingColor: { strokeWidth: 0, fill: '#a52714' }, // red
+                    risingColor: { strokeWidth: 0, fill: '#0f9d58' },   // green
+                    // bar: { groupWidth: '100%' },
+                },
+                colors: ['#CCCCCC'],
+
+            };
+
+            function placeMarker(dataTable) {
+                var cli = this.getChartLayoutInterface();
+                // var chartArea = cli.getChartAreaBoundingBox();
+
+                const elem1 = 1
+                const elem2 = 20
+
+                const low = 1
+                const high = 4
+
+                const marker2Height = document.querySelector('.overlay-marker-2').clientHeight + 1
+
+                document.querySelector('.overlay-marker-1').style.top = Math.floor(cli.getYLocation(dataTable.getValue(elem1, low))) + 1 + "px";
+                document.querySelector('.overlay-marker-1').style.left = Math.floor(cli.getXLocation(dataTable.getValue(elem1, 0))) - 2 + "px";
+
+                document.querySelector('.overlay-marker-2').style.top = Math.floor(cli.getYLocation(dataTable.getValue(elem2, high))) - marker2Height + "px";
+                document.querySelector('.overlay-marker-2').style.left = Math.floor(cli.getXLocation(dataTable.getValue(elem2, 0))) - 2 + "px";
+            };
+
+            var chart = new google.visualization.CandlestickChart(document.getElementById('line-chart-marker'));
+
+            google.visualization.events.addListener(chart, 'ready',
+                placeMarker.bind(chart, data));
+            chart.draw(data, options);
+        }
+    </script>
+</head>
+
+<body>
+    <div class="chartWithMarkerOverlay">
+
+        <div id="line-chart-marker" style="width: 1500px; height: 500px;"></div>
+
+        <div class="overlay-marker-1 overlay-marker">
+            <span>▲ ENTRY</span>
+        </div>
+        <div class="overlay-marker-2 overlay-marker">
+            <span>▼ EXIT</span>
+        </div>
+
+    </div>
+
+</body>
+
+</html>
